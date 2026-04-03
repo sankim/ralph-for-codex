@@ -37,6 +37,15 @@ python ~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github
   --url https://github.com/sankim/ralph-for-codex/tree/main/skills/ralph
 ```
 
+If your Python environment hits HTTPS certificate issues during the default download path, force git mode:
+
+```bash
+python ~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
+  --repo sankim/ralph-for-codex \
+  --path skills/ralph \
+  --method git
+```
+
 Restart Codex after installing so the new skill is discovered.
 
 ## Usage

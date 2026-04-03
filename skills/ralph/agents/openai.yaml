@@ -1,0 +1,7 @@
+interface:
+  display_name: "Ralph"
+  short_description: "Execute a plan with file-backed state and guardrails"
+  default_prompt: "Use $ralph to take the current implementation plan, use `.ralph/` as working state, and iterate until the work is `complete`, `blocked`, `stalled`, or `emergency-cap reached`."
+
+policy:
+  allow_implicit_invocation: false

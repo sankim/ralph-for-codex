@@ -7,7 +7,7 @@ description: Execute an existing implementation plan through a strict Ralph-styl
 
 ## Overview
 
-Use this skill to turn an existing plan into a strict file-backed execution loop. Treat the chosen plan as the source of truth, keep durable working memory on disk in `.ralph/`, and iterate in the smallest appropriate implementable slice rather than carrying the whole thread as memory.
+Use this skill to turn an existing plan into a strict file-backed execution loop. Treat the chosen plan as the source of truth, keep local working memory on disk in `.ralph/` for the active run, and iterate in the smallest appropriate implementable slice rather than carrying the whole thread as memory.
 
 This is an execution skill, not a planning skill.
 
@@ -32,7 +32,16 @@ After `.ralph/source-plan.md` and `.ralph/progress.md` exist, do not rely on old
 - the active `$ralph` invocation
 - any explicit plan override in that invocation
 
-Use `.ralph/` files as the only durable working memory layer.
+Use `.ralph/` files as the only durable working memory layer during the active run. They are temporary local execution state, not permanent repo artifacts.
+
+## Initialization And Git Ignore
+
+Before relying on `.ralph/` state, make a best-effort attempt to keep it out of Git status in the current repo.
+
+1. If the current working directory is inside a Git repo, resolve that repo's Git directory.
+2. If `.git/info/exclude` is available and does not already contain `.ralph/`, append exactly one `.ralph/` ignore entry there.
+3. Do not edit the repo's tracked `.gitignore` just to hide Ralph working state.
+4. If the repo is not Git-backed or `.git/info/exclude` cannot be updated, continue without failing the run and note that auto-ignore could not be applied.
 
 ## State Files
 
@@ -187,6 +196,17 @@ Stop as `emergency-cap reached` only when:
 
 - twelve passes have been attempted without reaching another terminal state
 
+## Cleanup
+
+When the loop stops, `.ralph/` should not linger unless the run needs to be resumed.
+
+- `complete`: after deriving the final summary from `.ralph/progress.md`, delete the entire `.ralph/` directory
+- `stalled`: after deriving the final summary from `.ralph/progress.md`, delete the entire `.ralph/` directory
+- `emergency-cap reached`: after deriving the final summary from `.ralph/progress.md`, delete the entire `.ralph/` directory
+- `blocked`: preserve `.ralph/` so the next `$ralph` invocation can resume from the saved state
+
+If cleanup fails for a non-blocked terminal state, report that clearly in the final summary.
+
 ## Validation
 
 Prefer repo-native validation in this order:
@@ -208,6 +228,9 @@ Return a compact summary with:
 - what remains
 - why the loop stopped
 - whether a hard reset was used
+- whether local Ralph state was cleaned up or intentionally preserved
+
+For non-blocked terminal states, derive the summary first, then clean up `.ralph/`, then return the final summary. For `blocked`, preserve `.ralph/` and say that the local Ralph state was preserved because the run is blocked.
 
 Do not produce a per-pass diary unless the user explicitly asks for it.
 
@@ -216,6 +239,8 @@ Do not produce a per-pass diary unless the user explicitly asks for it.
 - No auto-commit
 - Explicit invocation only via `$ralph`
 - File-backed state is the durable working memory layer
+- `.ralph/` should be auto-ignored via `.git/info/exclude` when possible
+- `.ralph/` should be cleaned up on final non-blocked terminal states
 - After initialization, older thread context is not durable memory
 
 ## Example Invocations

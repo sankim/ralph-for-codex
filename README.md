@@ -2,7 +2,7 @@
 
 `$ralph` is a Codex-native, Ralph-style execution skill for turning an existing implementation plan into a strict file-backed loop.
 
-It is inspired by the Ralph Wiggum approach, but it is not the external Open Ralph Wiggum CLI. This package is a Codex skill that uses repo-local `.ralph/` state files to keep working memory small and stopping behavior predictable.
+It is inspired by the Ralph Wiggum approach, but it is not the external Open Ralph Wiggum CLI. This package is a Codex skill that uses repo-local `.ralph/` state files as temporary working memory so execution stays focused and stopping behavior stays predictable.
 
 ## When To Use It
 
@@ -66,7 +66,16 @@ During execution, `$ralph` uses repo-local files under `.ralph/`:
 - `.ralph/progress.md`
 - `.ralph/scratchpad.md`
 
-These files act as the durable working memory for the loop.
+These files act as the working memory for the active run.
+
+When possible, `$ralph` adds `.ralph/` to the current repo's local `.git/info/exclude` so the working files stay out of `git status` without editing the repo's tracked `.gitignore`.
+
+When the run ends:
+
+- `complete`: `.ralph/` is deleted
+- `stalled`: `.ralph/` is deleted
+- `emergency-cap reached`: `.ralph/` is deleted
+- `blocked`: `.ralph/` is preserved so the next run can resume
 
 ## Terminal States
 
@@ -82,6 +91,7 @@ The loop stops only in one of these states:
 - This package is a Codex skill, not an external process supervisor
 - It expects an existing implementation plan
 - It does not auto-commit by default
+- Auto-ignore is best-effort and depends on Git metadata being available
 
 ## License
 
